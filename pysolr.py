@@ -852,12 +852,10 @@ class Solr(object):
         params = {
             "lowernames": "true",
             "wt": "json",
-            #"literal.content_id": 0,
-            #'commit': "true",
         }
         print('KWARGS', kwargs)
         print('PARAMS', params)
-        if extractOnly != false:
+        if extractOnly:
             print('HELLO?')
             params.update({"extractOnly": "true"})
 
