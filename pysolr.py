@@ -149,7 +149,7 @@ def unescape_html(text):
                 text = unicode_char(htmlentities.name2codepoint[text[1:-1]])
             except KeyError:
                 pass
-        return text # leave as is
+        return text  # leave as is
     return re.sub("&#?\w+;", fixup, text)
 
 
@@ -826,7 +826,7 @@ class Solr(object):
 
         return self._update(msg, waitFlush=waitFlush, waitSearcher=waitSearcher)
 
-    def extract(self, file_obj, extractOnly=True, **kwargs):
+    def extract(self, file_obj, extractOnly=False, **kwargs):
         """
         POSTs a file to the Solr ExtractingRequestHandler so rich content can
         be processed using Apache Tika. See the Solr wiki for details:
@@ -854,11 +854,19 @@ class Solr(object):
             raise ValueError("extract() requires file-like objects which have a defined name property")
 
         params = {
-            "extractOnly": "true" if extractOnly else "false",
             "lowernames": "true",
             "wt": "json",
+            #"literal.content_id": 0,
+            #'commit': "true",
         }
+        print('KWARGS', kwargs)
+        print('PARAMS', params)
+        if extractOnly != false:
+            print('HELLO?')
+            params.update({"extractOnly": "true"})
+
         params.update(kwargs)
+        print('NEW PARAMS', params)
 
         try:
             # We'll provide the file using its true name as Tika may use that
