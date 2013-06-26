@@ -670,30 +670,49 @@ class Solr(object):
     def _build_doc(self, doc, boost=None):
         doc_elem = ET.Element('doc')
 
+        # helper function to prevent duplication of code
+        def _add_doc_elem(attrs, value):
+            field = ET.Element('field', **attrs)
+            field.text = self._from_python(value)
+            doc_elem.append(field)
+
         for key, value in doc.items():
             if key == 'boost':
                 doc_elem.set('boost', force_unicode(value))
                 continue
 
-            # To avoid multiple code-paths we'd like to treat all of our values as iterables:
-            if isinstance(value, (list, tuple)):
-                values = value
+            # Atomic updates
+            if isinstance(value, dict):
+                for _key, _value in value.items():
+                    attrs = {'name': key, 'update': _key}
+
+                    if isinstance(_value, types.NoneType):
+                        attrs['null'] = 'true'
+
+                    if boost and key in boost:
+                        attrs['boost'] = force_unicode(boost[key])
+
+                    _add_doc_elem(attrs, _value)
             else:
-                values = (value, )
+                # To avoid multiple code-paths we'd like to treat all of our values as iterables:
+                if isinstance(value, (list, tuple)):
+                    values = value
+                else:
+                    values = (value, )
 
-            for bit in values:
-                if self._is_null_value(bit):
-                    continue
+                for bit in values:
+                    if self._is_null_value(bit):
+                        continue
 
-                attrs = {'name': key}
+                    attrs = {'name': key}
 
-                if boost and key in boost:
-                    attrs['boost'] = force_unicode(boost[key])
+                    if boost and key in boost:
+                        attrs['boost'] = force_unicode(boost[key])
 
-                field = ET.Element('field', **attrs)
-                field.text = self._from_python(bit)
+                    field = ET.Element('field', **attrs)
+                    field.text = self._from_python(bit)
 
-                doc_elem.append(field)
+                    doc_elem.append(field)
 
         return doc_elem
 
@@ -853,14 +872,10 @@ class Solr(object):
             "lowernames": "true",
             "wt": "json",
         }
-        print('KWARGS', kwargs)
-        print('PARAMS', params)
         if extractOnly:
-            print('HELLO?')
             params.update({"extractOnly": "true"})
 
         params.update(kwargs)
-        print('NEW PARAMS', params)
 
         try:
             # We'll provide the file using its true name as Tika may use that
