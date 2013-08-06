@@ -686,13 +686,18 @@ class Solr(object):
                 for _key, _value in value.items():
                     attrs = {'name': key, 'update': _key}
 
-                    if isinstance(_value, types.NoneType):
-                        attrs['null'] = 'true'
+                    # You can have a list of values (this changes it to the correct multivalued syntax)
+                    if isinstance(_value, list):
+                        for added in _value:
+                            _add_doc_elem(attrs, added)
+                    else:
+                        if isinstance(_value, types.NoneType):
+                            attrs['null'] = 'true'
 
-                    if boost and key in boost:
-                        attrs['boost'] = force_unicode(boost[key])
+                        if boost and key in boost:
+                            attrs['boost'] = force_unicode(boost[key])
 
-                    _add_doc_elem(attrs, _value)
+                        _add_doc_elem(attrs, _value)
             else:
                 # To avoid multiple code-paths we'd like to treat all of our values as iterables:
                 if isinstance(value, (list, tuple)):
